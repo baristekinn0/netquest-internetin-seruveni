@@ -3,6 +3,7 @@ export type QuizQuestion = {
   question: string;
   options: string[];
   correctIndex: number;
+  explanation: string;
 };
 
 export type Module = {
@@ -30,6 +31,7 @@ export type ModuleProgress = {
 };
 
 export type RootStackParamList = {
+  Login: undefined;
   Home: undefined;
   Module: { moduleId: string };
   Quiz: { moduleId: string };

@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -18,13 +17,16 @@ type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 };
 
-const { width } = Dimensions.get('window');
-
 export default function HomeScreen({ navigation }: Props) {
-  const { progress, totalStars } = useStore();
+  const { progress, totalStars, user, logout } = useStore();
 
   const getModuleProgress = (moduleId: string) =>
     progress.find((p) => p.moduleId === moduleId);
+
+  const handleLogout = () => {
+    logout();
+    navigation.replace('Login');
+  };
 
   return (
     <LinearGradient colors={['#0F0C29', '#302B63', '#24243E']} style={styles.container}>
@@ -32,6 +34,12 @@ export default function HomeScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
+          <View style={styles.topRow}>
+            <Text style={styles.welcomeText}>👋 {user}</Text>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+              <Text style={styles.logoutText}>Çıkış</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.appTitle}>🌐 NetQuest</Text>
           <Text style={styles.appSubtitle}>İnternetin Serüveni</Text>
           <View style={styles.starsBox}>
@@ -87,6 +95,10 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 60 },
   header: { alignItems: 'center', marginBottom: 32 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 8 },
+  welcomeText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '600' },
+  logoutBtn: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5 },
+  logoutText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '600' },
   appTitle: { fontSize: 36, fontWeight: '800', color: '#FFFFFF' },
   appSubtitle: { fontSize: 16, color: '#C0B9DD', marginTop: 4, letterSpacing: 1 },
   starsBox: {
