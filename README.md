@@ -2,7 +2,7 @@
 
 Ortaokul öğrencileri (11-14 yaş) için geliştirilmiş, **internetin nasıl çalıştığını** öğreten pedagojik bir mobil eğitim uygulaması.
 
-> Yıldız Teknik Üniversitesi — İşletim Sistemleri Dersi Proje Ödevi
+> Yıldız Teknik Üniversitesi — İşletim Sistemleri ve Bilgisayar Ağları Dersi Proje Ödevi
 
 ---
 
