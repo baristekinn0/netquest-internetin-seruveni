@@ -107,3 +107,7 @@ Login → Home → Module (slaytlar) → Quiz → Result → Home
 ## 👥 Geliştirici
 
 - Barış Tekin
+- Alperen Baştuğ
+- Sadık Ahmet Fırat
+- Muammer Atçeken
+- Berkay Pamuk
