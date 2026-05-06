@@ -109,5 +109,5 @@ Login → Home → Module (slaytlar) → Quiz → Result → Home
 - Barış Tekin
 - Alperen Baştuğ
 - Sadık Ahmet Fırat
-- Muammer Atçeken
+- Muammer Atçeken 21091031 
 - Berkay Pamuk
