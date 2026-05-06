@@ -107,7 +107,7 @@ Login → Home → Module (slaytlar) → Quiz → Result → Home
 ## 👥 Geliştirici
 
 - Barış Tekin
-- Alperen Baştuğ
+- Alperen Baştuğ 22091010 (GitHub: "alperennbstg")
 - Sadık Ahmet Fırat
 - Muammer Atçeken 21091031 (GitHub Bladeszz)
 - Berkay Pamuk
