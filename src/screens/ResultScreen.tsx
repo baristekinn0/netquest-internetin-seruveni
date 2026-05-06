@@ -1,3 +1,9 @@
+/**
+ * ResultScreen - Quiz sonuçlarını gösterir
+ * Kullanıcının başarı yüzdesini ve skoru gösterir
+ * @component
+ * @returns {JSX.Element} Quiz results view
+ */
 import React, { useEffect, useRef } from 'react';
 import {
   View,

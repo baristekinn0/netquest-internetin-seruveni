@@ -22,9 +22,22 @@ type Props = {
 
 const { width } = Dimensions.get('window');
 
+/**
+ * ModuleScreen - Seçilen modülün slide'larını gösterir
+ * Modülün tüm slide'larında gezinmeyi sağlar
+ * @component
+ * @returns {JSX.Element} Module slide view
+ */
 export default function ModuleScreen({ navigation, route }: Props) {
   const { moduleId } = route.params;
-  const module = MODULES.find((m) => m.id === moduleId)!;
+  const module = MODULES.find((m) => m.id === moduleId);
+  if (!module) {
+    return (
+      <View style={styles.container}>
+        <Text>Modül bulunamadı</Text>
+      </View>
+    );
+  }
   const [currentSlide, setCurrentSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 

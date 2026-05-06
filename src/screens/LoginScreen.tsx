@@ -1,3 +1,9 @@
+/**
+ * LoginScreen - Kullanıcı giriş ekranı
+ * Email ve şifre ile giriş yapmayı sağlar
+ * @component
+ * @returns {JSX.Element} Login form view
+ */
 import React, { useState } from 'react';
 import {
   View,

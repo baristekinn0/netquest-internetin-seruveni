@@ -21,9 +21,22 @@ type Props = {
 
 type AnswerState = 'idle' | 'correct' | 'wrong';
 
+/**
+ * QuizScreen - Modüle ait quiz sorularını sorar
+ * Kullanıcı cevaplarını kontrol eder ve skoru takip eder
+ * @component
+ * @returns {JSX.Element} Quiz questions view
+ */
 export default function QuizScreen({ navigation, route }: Props) {
   const { moduleId } = route.params;
-  const module = MODULES.find((m) => m.id === moduleId)!;
+  const module = MODULES.find((m) => m.id === moduleId);
+  if (!module) {
+    return (
+      <View style={styles.container}>
+        <Text>Modül bulunamadı</Text>
+      </View>
+    );
+  }
 
   const [currentQ, setCurrentQ] = useState(0);
   const [score, setScore] = useState(0);

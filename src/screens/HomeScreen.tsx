@@ -1,3 +1,8 @@
+/**
+ * HomeScreen - Quiz modüllerini listeler ve seçilmiş modülün detayına gidebilirsin
+ * @component
+ * @returns {JSX.Element} Module list view
+ */
 import React from 'react';
 import {
   View,
