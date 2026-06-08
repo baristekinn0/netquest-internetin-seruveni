@@ -10,43 +10,74 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useWindowDimensions } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../types';
+import { ModulesStackParamList } from '../types';
 import { MODULES } from '../data/modules';
 
 type Props = {
-  navigation: StackNavigationProp<RootStackParamList, 'Quiz'>;
-  route: RouteProp<RootStackParamList, 'Quiz'>;
+  navigation: StackNavigationProp<ModulesStackParamList, 'Quiz'>;
+  route: RouteProp<ModulesStackParamList, 'Quiz'>;
 };
 
 type AnswerState = 'idle' | 'correct' | 'wrong';
 
-/**
- * QuizScreen - Modüle ait quiz sorularını sorar
- * Kullanıcı cevaplarını kontrol eder ve skoru takip eder
- * @component
- * @returns {JSX.Element} Quiz questions view
- */
+const QUIZ_QUESTION_COUNT = 5;
+const PASS_THRESHOLD = 0.7;
+
+type PreparedQuestion = {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+};
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function prepareQuestions(moduleId: string): PreparedQuestion[] {
+  const mod = MODULES.find((m) => m.id === moduleId)!;
+  const pool = shuffle(mod.quiz).slice(0, QUIZ_QUESTION_COUNT);
+
+  return pool.map((q) => {
+    const correctAnswer = q.options[q.correctIndex];
+    const shuffledOptions = shuffle(q.options);
+    const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
+    return {
+      question: q.question,
+      options: shuffledOptions,
+      correctIndex: newCorrectIndex,
+      explanation: q.explanation,
+    };
+  });
+}
+
 export default function QuizScreen({ navigation, route }: Props) {
   const { moduleId } = route.params;
-  const module = MODULES.find((m) => m.id === moduleId);
-  if (!module) {
-    return (
-      <View style={styles.container}>
-        <Text>Modül bulunamadı</Text>
-      </View>
-    );
-  }
+  const mod = MODULES.find((m) => m.id === moduleId)!;
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
+  const [questions, setQuestions] = useState<PreparedQuestion[]>(() =>
+    prepareQuestions(moduleId)
+  );
   const [currentQ, setCurrentQ] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answerState, setAnswerState] = useState<AnswerState>('idle');
+
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const explanationAnim = useRef(new Animated.Value(0)).current;
 
-  const question = module.quiz[currentQ];
+  const question = questions[currentQ];
+  const total = questions.length;
 
   const shake = () => {
     Animated.sequence([
@@ -69,30 +100,30 @@ export default function QuizScreen({ navigation, route }: Props) {
     if (correct) {
       setAnswerState('correct');
       setScore((s) => s + 1);
-      // Doğru cevapta kısa bekleyip geç
-      setTimeout(() => goNext(score + 1), 1000);
+      setTimeout(() => goNext(score + 1), 1400);
     } else {
       setAnswerState('wrong');
       shake();
       showExplanation();
-      // Yanlış cevapta açıklama göster, kullanıcı "Devam" a bassın
     }
   };
 
   const goNext = (finalScore: number) => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
       explanationAnim.setValue(0);
-      if (currentQ + 1 >= module.quiz.length) {
+      if (currentQ + 1 >= total) {
+        const passed = finalScore / total >= PASS_THRESHOLD;
         navigation.replace('Result', {
           moduleId,
           score: finalScore,
-          total: module.quiz.length,
+          total,
+          passed,
         });
       } else {
         setCurrentQ((q) => q + 1);
         setSelected(null);
         setAnswerState('idle');
-        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+        Animated.timing(fadeAnim, { toValue: 1, duration: 280, useNativeDriver: true }).start();
       }
     });
   };
@@ -105,31 +136,33 @@ export default function QuizScreen({ navigation, route }: Props) {
   };
 
   return (
-    <LinearGradient colors={module.gradientColors} style={styles.container}>
+    <LinearGradient colors={mod.gradientColors} style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerLabel}>Soru {currentQ + 1}/{module.quiz.length}</Text>
-        <Text style={styles.headerTitle}>{module.emoji} Quiz</Text>
+      <View style={[styles.header, isLandscape && styles.headerLandscape]}>
+        <Text style={styles.headerLabel}>Soru {currentQ + 1}/{total}</Text>
+        <Text style={styles.headerTitle}>{mod.emoji} Quiz</Text>
         <Text style={styles.scoreText}>✅ {score}</Text>
       </View>
 
-      {/* Progress bar */}
       <View style={styles.progressBg}>
-        <View style={[styles.progressFill, { width: `${(currentQ / module.quiz.length) * 100}%` }]} />
+        <View style={[styles.progressFill, { width: `${(currentQ / total) * 100}%` }]} />
+      </View>
+
+      <View style={styles.passBadge}>
+        <Text style={styles.passBadgeText}>
+          Geçmek için {Math.ceil(total * PASS_THRESHOLD)}/{total} doğru gerek
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: fadeAnim }}>
-          {/* Soru */}
           <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
             <View style={styles.questionCard}>
               <Text style={styles.questionText}>{question.question}</Text>
             </View>
           </Animated.View>
 
-          {/* Seçenekler */}
           <View style={styles.options}>
             {question.options.map((opt, idx) => (
               <TouchableOpacity
@@ -151,7 +184,6 @@ export default function QuizScreen({ navigation, route }: Props) {
             ))}
           </View>
 
-          {/* Açıklama (sadece yanlış cevapta) */}
           {answerState === 'wrong' && (
             <Animated.View style={[styles.explanationCard, { opacity: explanationAnim }]}>
               <Text style={styles.explanationTitle}>💡 Doğru Cevap:</Text>
@@ -164,7 +196,7 @@ export default function QuizScreen({ navigation, route }: Props) {
                 onPress={() => goNext(score)}
               >
                 <Text style={styles.continueBtnText}>
-                  {currentQ + 1 >= module.quiz.length ? 'Sonucu Gör →' : 'Sonraki Soru →'}
+                  {currentQ + 1 >= total ? 'Sonucu Gör →' : 'Sonraki Soru →'}
                 </Text>
               </TouchableOpacity>
             </Animated.View>
@@ -177,13 +209,14 @@ export default function QuizScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerLandscape: { paddingTop: 16 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 56,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
   headerLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
   headerTitle: { color: '#FFFFFF', fontWeight: '800', fontSize: 18 },
@@ -193,28 +226,30 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     marginHorizontal: 20,
     borderRadius: 3,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   progressFill: { height: 6, backgroundColor: '#FFFFFF', borderRadius: 3 },
+  passBadge: { marginHorizontal: 20, marginBottom: 12 },
+  passBadgeText: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: '600' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   questionCard: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 20,
+    padding: 20,
+    marginBottom: 16,
   },
   questionText: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '700',
     color: '#FFFFFF',
-    lineHeight: 28,
+    lineHeight: 27,
     textAlign: 'center',
   },
-  options: { gap: 12, marginBottom: 16 },
+  options: { gap: 10, marginBottom: 14 },
   option: {
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
@@ -228,39 +263,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 71, 87, 0.35)',
     borderColor: '#FF4757',
   },
-  optionDimmed: {
-    opacity: 0.45,
-  },
-  optionLetter: { color: '#FFFFFF', fontWeight: '800', fontSize: 15, width: 28 },
-  optionText: { color: '#FFFFFF', fontSize: 15, flex: 1, lineHeight: 22 },
-  icon: { fontSize: 18, marginLeft: 8 },
+  optionDimmed: { opacity: 0.45 },
+  optionLetter: { color: '#FFFFFF', fontWeight: '800', fontSize: 14, width: 26 },
+  optionText: { color: '#FFFFFF', fontSize: 14, flex: 1, lineHeight: 20 },
+  icon: { fontSize: 16, marginLeft: 6 },
   explanationCard: {
     backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 18,
+    padding: 18,
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.2)',
     gap: 8,
   },
-  explanationTitle: { color: '#FFD700', fontWeight: '800', fontSize: 14 },
-  explanationCorrect: {
-    color: '#2ED573',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  explanationBody: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 14,
-    lineHeight: 22,
-  },
+  explanationTitle: { color: '#FFD700', fontWeight: '800', fontSize: 13 },
+  explanationCorrect: { color: '#2ED573', fontWeight: '700', fontSize: 15 },
+  explanationBody: { color: 'rgba(255,255,255,0.9)', fontSize: 13, lineHeight: 20 },
   continueBtn: {
-    marginTop: 8,
+    marginTop: 6,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 14,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingVertical: 11,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.4)',
   },
-  continueBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  continueBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
 });

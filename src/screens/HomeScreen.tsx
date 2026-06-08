@@ -12,86 +12,102 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types';
+import { ModulesStackParamList } from '../types';
 import { MODULES } from '../data/modules';
 import { useStore } from '../store/useStore';
 
 type Props = {
-  navigation: StackNavigationProp<RootStackParamList, 'Home'>;
+  navigation: StackNavigationProp<ModulesStackParamList, 'Home'>;
 };
 
 export default function HomeScreen({ navigation }: Props) {
-  const { progress, totalStars, user, logout } = useStore();
+  const { progress, totalStars, user } = useStore();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const getModuleProgress = (moduleId: string) =>
     progress.find((p) => p.moduleId === moduleId);
 
-  const handleLogout = () => {
-    logout();
-    navigation.replace('Login');
+  const isModuleLocked = (index: number): boolean => {
+    if (index === 0) return false;
+    const prevModule = MODULES[index - 1];
+    const prevProgress = getModuleProgress(prevModule.id);
+    return !prevProgress?.completed;
   };
+
+  const cardWidth = isLandscape ? (width - 48) / 2 : width - 32;
 
   return (
     <LinearGradient colors={['#0F0C29', '#302B63', '#24243E']} style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.topRow}>
-            <Text style={styles.welcomeText}>👋 {user}</Text>
-            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-              <Text style={styles.logoutText}>Çıkış</Text>
-            </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, isLandscape && styles.scrollLandscape]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.header, isLandscape && styles.headerLandscape]}>
+          <View>
+            <Text style={styles.welcomeText}>Hoş geldin, {user} 👋</Text>
+            <Text style={styles.appTitle}>🌐 NetQuest</Text>
           </View>
-          <Text style={styles.appTitle}>🌐 NetQuest</Text>
-          <Text style={styles.appSubtitle}>İnternetin Serüveni</Text>
           <View style={styles.starsBox}>
-            <Text style={styles.starsText}>⭐ {totalStars} yıldız toplandı</Text>
+            <Text style={styles.starsText}>⭐ {totalStars}</Text>
           </View>
         </View>
 
         <Text style={styles.sectionTitle}>Modüller</Text>
 
-        {MODULES.map((module, index) => {
-          const prog = getModuleProgress(module.id);
-          const completed = prog?.completed ?? false;
-          const score = prog?.score ?? 0;
+        <View style={[styles.grid, isLandscape && styles.gridLandscape]}>
+          {MODULES.map((module, index) => {
+            const prog = getModuleProgress(module.id);
+            const completed = prog?.completed ?? false;
+            const score = prog?.score ?? 0;
+            const locked = isModuleLocked(index);
 
-          return (
-            <TouchableOpacity
-              key={module.id}
-              onPress={() => navigation.navigate('Module', { moduleId: module.id })}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={module.gradientColors}
-                style={styles.moduleCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+            return (
+              <TouchableOpacity
+                key={module.id}
+                style={{ width: cardWidth }}
+                onPress={() => {
+                  if (!locked) navigation.navigate('Module', { moduleId: module.id });
+                }}
+                activeOpacity={locked ? 1 : 0.85}
               >
-                <View style={styles.cardTop}>
-                  <Text style={styles.moduleNumber}>{index + 1}</Text>
-                  <Text style={styles.moduleEmoji}>{module.emoji}</Text>
-                </View>
-                <Text style={styles.moduleTitle}>{module.title}</Text>
-                <Text style={styles.moduleSubtitle}>{module.subtitle}</Text>
-
-                {completed && (
-                  <View style={styles.completedBadge}>
-                    <Text style={styles.completedText}>
-                      {'⭐'.repeat(score)}{'☆'.repeat(3 - score)} Tamamlandı!
+                <LinearGradient
+                  colors={locked ? ['#2a2a3e', '#1e1e32'] : module.gradientColors}
+                  style={styles.moduleCard}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.cardTop}>
+                    <Text style={styles.moduleNumber}>{index + 1}</Text>
+                    <Text style={[styles.moduleEmoji, locked && styles.lockedEmoji]}>
+                      {locked ? '🔒' : module.emoji}
                     </Text>
                   </View>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          );
-        })}
+                  <Text style={[styles.moduleTitle, locked && styles.lockedTitle]}>
+                    {module.title}
+                  </Text>
+                  <Text style={[styles.moduleSubtitle, locked && styles.lockedSubtitle]}>
+                    {locked ? 'Önceki modülü tamamla' : module.subtitle}
+                  </Text>
+                  {completed && (
+                    <View style={styles.completedBadge}>
+                      <Text style={styles.completedText}>
+                        {'⭐'.repeat(score)}{'☆'.repeat(3 - score)} Tamamlandı!
+                      </Text>
+                    </View>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 16 }} />
       </ScrollView>
     </LinearGradient>
   );
@@ -99,52 +115,67 @@ export default function HomeScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingTop: 60 },
-  header: { alignItems: 'center', marginBottom: 32 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 8 },
-  welcomeText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '600' },
-  logoutBtn: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5 },
-  logoutText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '600' },
-  appTitle: { fontSize: 36, fontWeight: '800', color: '#FFFFFF' },
-  appSubtitle: { fontSize: 16, color: '#C0B9DD', marginTop: 4, letterSpacing: 1 },
-  starsBox: {
-    marginTop: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+  scroll: { paddingHorizontal: 16, paddingTop: 52, paddingBottom: 8 },
+  scrollLandscape: { paddingTop: 24 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  starsText: { color: '#FFD700', fontWeight: '700', fontSize: 14 },
+  headerLandscape: { marginBottom: 12 },
+  welcomeText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '600' },
+  appTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', marginTop: 2 },
+  starsBox: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  starsText: { color: '#FFD700', fontWeight: '700', fontSize: 15 },
   sectionTitle: {
-    color: '#C0B9DD',
-    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  grid: { gap: 12 },
+  gridLandscape: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
   },
   moduleCard: {
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 18,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
   },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  moduleNumber: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '700' },
-  moduleEmoji: { fontSize: 32 },
-  moduleTitle: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
-  moduleSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  moduleNumber: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '700' },
+  moduleEmoji: { fontSize: 28 },
+  lockedEmoji: { opacity: 0.5 },
+  moduleTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+  lockedTitle: { color: 'rgba(255,255,255,0.4)' },
+  moduleSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  lockedSubtitle: { color: 'rgba(255,255,255,0.3)' },
   completedBadge: {
-    marginTop: 10,
+    marginTop: 8,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 3,
     alignSelf: 'flex-start',
   },
-  completedText: { color: '#FFD700', fontSize: 12, fontWeight: '700' },
+  completedText: { color: '#FFD700', fontSize: 11, fontWeight: '700' },
 });

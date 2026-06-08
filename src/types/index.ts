@@ -27,13 +27,23 @@ export type Slide = {
 export type ModuleProgress = {
   moduleId: string;
   completed: boolean;
-  score: number; // 0-3
+  score: number;
 };
 
 export type RootStackParamList = {
   Login: undefined;
+  Main: undefined;
+};
+
+export type ModulesStackParamList = {
   Home: undefined;
   Module: { moduleId: string };
   Quiz: { moduleId: string };
-  Result: { moduleId: string; score: number; total: number };
+  Result: { moduleId: string; score: number; total: number; passed: boolean };
+};
+
+export type TabParamList = {
+  ModulesTab: undefined;
+  ProgressTab: undefined;
+  ProfileTab: undefined;
 };

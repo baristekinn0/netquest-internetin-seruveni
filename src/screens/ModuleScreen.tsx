@@ -5,41 +5,28 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
   Animated,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../types';
+import { ModulesStackParamList } from '../types';
 import { MODULES } from '../data/modules';
 
 type Props = {
-  navigation: StackNavigationProp<RootStackParamList, 'Module'>;
-  route: RouteProp<RootStackParamList, 'Module'>;
+  navigation: StackNavigationProp<ModulesStackParamList, 'Module'>;
+  route: RouteProp<ModulesStackParamList, 'Module'>;
 };
 
-const { width } = Dimensions.get('window');
-
-/**
- * ModuleScreen - Seçilen modülün slide'larını gösterir
- * Modülün tüm slide'larında gezinmeyi sağlar
- * @component
- * @returns {JSX.Element} Module slide view
- */
 export default function ModuleScreen({ navigation, route }: Props) {
   const { moduleId } = route.params;
-  const module = MODULES.find((m) => m.id === moduleId);
-  if (!module) {
-    return (
-      <View style={styles.container}>
-        <Text>Modül bulunamadı</Text>
-      </View>
-    );
-  }
+  const mod = MODULES.find((m) => m.id === moduleId)!;
   const [currentSlide, setCurrentSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const goToSlide = (next: number) => {
     Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
@@ -48,25 +35,23 @@ export default function ModuleScreen({ navigation, route }: Props) {
     });
   };
 
-  const slide = module.slides[currentSlide];
-  const isLast = currentSlide === module.slides.length - 1;
+  const slide = mod.slides[currentSlide];
+  const isLast = currentSlide === mod.slides.length - 1;
 
   return (
-    <LinearGradient colors={module.gradientColors} style={styles.container}>
+    <LinearGradient colors={mod.gradientColors} style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, isLandscape && styles.headerLandscape]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{module.title}</Text>
-        <Text style={styles.slideCount}>{currentSlide + 1}/{module.slides.length}</Text>
+        <Text style={styles.headerTitle}>{mod.title}</Text>
+        <Text style={styles.slideCount}>{currentSlide + 1}/{mod.slides.length}</Text>
       </View>
 
-      {/* Progress dots */}
       <View style={styles.dots}>
-        {module.slides.map((_, i) => (
+        {mod.slides.map((_, i) => (
           <View
             key={i}
             style={[styles.dot, i <= currentSlide ? styles.dotActive : styles.dotInactive]}
@@ -74,19 +59,31 @@ export default function ModuleScreen({ navigation, route }: Props) {
         ))}
       </View>
 
-      {/* Slide content */}
       <Animated.View style={[styles.slideContainer, { opacity: fadeAnim }]}>
-        <ScrollView contentContainerStyle={styles.slideScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.slideEmoji}>{slide.emoji}</Text>
-          <Text style={styles.slideTitle}>{slide.title}</Text>
-          <View style={styles.bodyCard}>
-            <Text style={styles.slideBody}>{slide.body}</Text>
+        {isLandscape ? (
+          <View style={styles.landscapeLayout}>
+            <View style={styles.landscapeLeft}>
+              <Text style={styles.slideEmoji}>{slide.emoji}</Text>
+              <Text style={styles.slideTitle}>{slide.title}</Text>
+            </View>
+            <ScrollView style={styles.landscapeRight} showsVerticalScrollIndicator={false}>
+              <View style={[styles.bodyCard, { width: width / 2 - 32 }]}>
+                <Text style={styles.slideBody}>{slide.body}</Text>
+              </View>
+            </ScrollView>
           </View>
-        </ScrollView>
+        ) : (
+          <ScrollView contentContainerStyle={styles.slideScroll} showsVerticalScrollIndicator={false}>
+            <Text style={styles.slideEmoji}>{slide.emoji}</Text>
+            <Text style={styles.slideTitle}>{slide.title}</Text>
+            <View style={[styles.bodyCard, { width: width - 40 }]}>
+              <Text style={styles.slideBody}>{slide.body}</Text>
+            </View>
+          </ScrollView>
+        )}
       </Animated.View>
 
-      {/* Navigation buttons */}
-      <View style={styles.navRow}>
+      <View style={[styles.navRow, isLandscape && styles.navRowLandscape]}>
         {currentSlide > 0 && (
           <TouchableOpacity style={styles.prevBtn} onPress={() => goToSlide(currentSlide - 1)}>
             <Text style={styles.prevText}>← Önceki</Text>
@@ -117,10 +114,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 60,
+    paddingTop: 56,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
+  headerLandscape: { paddingTop: 16 },
   backBtn: { padding: 4 },
   backText: { color: 'rgba(255,255,255,0.8)', fontSize: 15 },
   headerTitle: { color: '#FFFFFF', fontWeight: '800', fontSize: 16, flex: 1, textAlign: 'center' },
@@ -130,51 +128,53 @@ const styles = StyleSheet.create({
   dotActive: { backgroundColor: '#FFFFFF' },
   dotInactive: { backgroundColor: 'rgba(255,255,255,0.3)' },
   slideContainer: { flex: 1, paddingHorizontal: 20 },
-  slideScroll: { alignItems: 'center', paddingTop: 16, paddingBottom: 20 },
-  slideEmoji: { fontSize: 72, marginBottom: 16 },
+  slideScroll: { alignItems: 'center', paddingTop: 12, paddingBottom: 20 },
+  landscapeLayout: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  landscapeLeft: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  landscapeRight: { flex: 1 },
+  slideEmoji: { fontSize: 64, marginBottom: 12 },
   slideTitle: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   bodyCard: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 20,
-    padding: 20,
-    width: width - 40,
+    padding: 18,
   },
   slideBody: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#FFFFFF',
-    lineHeight: 26,
-    textAlign: 'left',
+    lineHeight: 24,
   },
   navRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 12,
+    paddingBottom: 36,
+    paddingTop: 10,
     gap: 12,
   },
+  navRowLandscape: { paddingBottom: 16 },
   prevBtn: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
-  prevText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  prevText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   nextBtn: {
     flex: 2,
     backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 16,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.5)',
   },
-  nextText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  nextText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
 });
