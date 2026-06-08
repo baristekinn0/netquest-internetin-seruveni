@@ -110,4 +110,4 @@ Login → Home → Module (slaytlar) → Quiz → Result → Home
 - Alperen Baştuğ 22091010 (GitHub: "alperennbstg")
 - Sadık Ahmet Fırat
 - Muammer Atçeken 21091031 (GitHub Bladeszz)
-- Berkay Pamuk
+- Berkay Pamuk 21091011 (GitHub: BerkayPamuk)
