@@ -164,7 +164,7 @@ Login
 
 ## 👥 Geliştirici
 
-- Barış Tekin
+- Barış Tekin 21091003
 - Alperen Baştuğ 22091010 (GitHub: alperennbstg)
 - Sadık Ahmet Fırat
 - Muammer Atçeken 21091031 (GitHub: Bladeszz)
