@@ -2,8 +2,8 @@
 
 Ortaokul öğrencileri (11-14 yaş) için geliştirilmiş, **internetin nasıl çalıştığını** öğreten pedagojik bir mobil eğitim uygulaması.
 
-> Yıldız Teknik Üniversitesi — İşletim Sistemleri ve Bilgisayar Ağları Dersi Proje Ödevi
-> Uygylama Videsu --> https://drive.google.com/drive/folders/17ktaYO23n3ObNqJOjlNM7UzzIZsby4Ew?usp=drive_link
+> Yıldız Teknik Üniversitesi — İşletim Sistemleri ve Bilgisayar Ağları Dersi Proje Ödevi   
+> Uygulama Videsu --> https://drive.google.com/drive/folders/17ktaYO23n3ObNqJOjlNM7UzzIZsby4Ew?usp=drive_link
 
 ---
 
